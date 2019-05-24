@@ -1,6 +1,8 @@
 package org.example.analyticsux;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,12 +10,19 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseAnalytics analytics;
+    private FirebaseRemoteConfig remoteConfig;
+    private static final int CACHE_TIME_SECONDS = 30;//3600; // 10 HORAS
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         analytics = FirebaseAnalytics.getInstance(this);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -34,6 +43,36 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        remoteConfig = FirebaseRemoteConfig.getInstance();
+        FirebaseRemoteConfigSettings config = new FirebaseRemoteConfigSettings
+                .Builder().setDeveloperModeEnabled(BuildConfig.DEBUG).build();
+        remoteConfig.setConfigSettings(config);
+        remoteConfig.setDefaults(R.xml.remote_config);
+        remoteConfig.fetch(CACHE_TIME_SECONDS)
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(MainActivity.this, "Fetch OK", Toast.LENGTH_SHORT).show();
+                            remoteConfig.activateFetched();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Fetch ha fallado", Toast.LENGTH_SHORT).show();
+                        }
+                        String iconoFab = remoteConfig.getString("icono_fab3");
+                        if (iconoFab.equals("info")) {
+                            fab.setImageResource(android.R.drawable.ic_dialog_info);
+                            analytics.setUserProperty( "experimento_icono", "info" );
+                        } else{
+                            analytics.setUserProperty( "experimento_icono", "email" );
+                        }/* else if (iconoFab.equals("andy")) {
+                            fab.setImageResource(R.drawable.ic_andy);
+                        } else if (iconoFab.equals("en_us")) {
+                            fab.setImageResource(R.drawable.ic_es_lat);
+                        }
+                        */
+                    }
+                });
     }
 
     @Override
@@ -52,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, Settings.class));
             return true;
         }
 
