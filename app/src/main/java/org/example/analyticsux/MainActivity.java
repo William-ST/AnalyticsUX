@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(MainActivity.this, "Fetch ha fallado", Toast.LENGTH_SHORT).show();
                         }
-                        String iconoFab = remoteConfig.getString("icono_fab3");
+                        String iconoFab = remoteConfig.getString("icono_fab");
                         if (iconoFab.equals("info")) {
                             fab.setImageResource(android.R.drawable.ic_dialog_info);
                             analytics.setUserProperty( "experimento_icono", "info" );
